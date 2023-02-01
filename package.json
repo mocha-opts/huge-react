@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"lint": "eslint --ext .ts,.jsx,.tsx --fix --quiet --ignore-path .gitignore "
+		"lint": "eslint --ext .ts,.jsx,.tsx --fix --quiet ./packages"
 	},
 	"repository": {
 		"type": "git",
@@ -24,6 +24,7 @@
 		"@commitlint/cli": "^17.4.2",
 		"@commitlint/config-conventional": "^17.4.2",
 		"@typescript-eslint/eslint-plugin": "^5.50.0",
+		"@typescript-eslint/parser": "^5.50.0",
 		"commitlint": "^17.4.2",
 		"eslint": "^8.33.0",
 		"eslint-config-prettier": "^8.6.0",
