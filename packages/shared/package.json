@@ -1,0 +1,8 @@
+{
+	"name": "shared",
+	"version": "1.0.0",
+	"description": "all common utils and type definition",
+	"module": "index.js",
+	"author": "coconut",
+	"license": "ISC"
+}
