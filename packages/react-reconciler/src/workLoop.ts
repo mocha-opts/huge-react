@@ -38,12 +38,17 @@ function renderRoot(root: FiberRootNode) {
 			workloop();
 			break;
 		} catch (error) {
-			console.warn('workloop发生错误');
+			if (__DEV__) {
+				console.warn('workloop发生错误');
+			}
 			workInProgress = null;
 		}
 	} while (true);
-}
+	const finishedWork = root.current.alternate;
+	root.finishedWork = finishedWork;
 
+	commitRoot(root);
+}
 function workloop() {
 	//递归的过程
 	while (workInProgress !== null) {

@@ -1,16 +1,11 @@
 import { Key, Props, ReactElementType, Ref } from './../../shared/ReactTypes';
-import {
-	FunctionComponent,
-	HostComponent,
-	WorkTag,
-	WorkType
-} from './workTags';
+import { FunctionComponent, HostComponent, WorkTag } from './workTags';
 import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig'; //宿主环境是单独包
 
 export class FiberNode {
 	type: any;
-	tag: WorkType;
+	tag: WorkTag;
 	pendingProps: Props;
 	key: Key;
 	stateNode: any;
@@ -23,9 +18,10 @@ export class FiberNode {
 	ref: Ref;
 	alternate: FiberNode | null;
 	flags: Flags;
+	subtreeFlags: Flags;
 	updateQueue: unknown;
 
-	constructor(tag: WorkType, pendingProps: Props, key: Key) {
+	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
 		//实例的属性
 		this.tag = tag;
 		this.key = key;
@@ -46,6 +42,7 @@ export class FiberNode {
 		this.updateQueue = null;
 		//副作用
 		this.flags = NoFlags;
+		this.subtreeFlags = NoFlags;
 	}
 }
 export class FiberRootNode {
@@ -75,6 +72,7 @@ export const createWorkInProgress = (
 		//update
 		wip.pendingProps = pendingProps;
 		wip.flags = NoFlags;
+		wip.subtreeFlags = NoFlags;
 	}
 	wip.type = current.type;
 	wip.updateQueue = current.updateQueue;

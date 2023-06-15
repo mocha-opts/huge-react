@@ -5,7 +5,7 @@ import { HostComponent, HostRoot, HostText } from './workTags';
 import { mountChildFibers, reconcileChildFibers } from './childFibers';
 
 //递归中的递
-export const beginWork = (wip: FiberNode): FiberNode => {
+export const beginWork = (wip: FiberNode) => {
 	//比较 返回子fibernode
 	switch (wip.tag) {
 		case HostRoot:
