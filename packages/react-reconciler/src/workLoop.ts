@@ -96,7 +96,7 @@ function workloop() {
 
 function performUnitOfWork(fiber: FiberNode) {
 	const next = beginWork(fiber); //如果有子节点,就遍历子节点.可能是fiber的子fiber 也可能是null,null的话这个fiber没有子fiber
-	fiber.memoizeProps = fiber.pendingProps; //递的工作完了,就把之前的props赋值给memoizeProps(pendingProps 是开始工作前的props)
+	fiber.memoizedProps = fiber.pendingProps; //递的工作完了,就把之前的props赋值给memoizeProps(pendingProps 是开始工作前的props)
 	if (next === null) {
 		//没有子节点就遍历兄弟节点
 		completeUnitOfWork(fiber);

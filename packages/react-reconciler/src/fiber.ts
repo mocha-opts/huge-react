@@ -13,8 +13,8 @@ export class FiberNode {
 	sibling: FiberNode | null;
 	child: FiberNode | null;
 	index: number;
-	memoizeProps: Props | null;
-	memoizeState: any; //更新完成后新的state
+	memoizedProps: Props | null;
+	memoizedState: any;//更新完成后新的state
 	ref: Ref;
 	alternate: FiberNode | null;
 	flags: Flags;
@@ -36,8 +36,8 @@ export class FiberNode {
 		this.ref = null;
 		//构成工作单元
 		this.pendingProps = pendingProps;
-		this.memoizeProps = null;
-		this.memoizeState = null;
+		this.memoizedProps = null;
+		this.memoizedState = null;
 		this.alternate = null;
 		this.updateQueue = null;
 		//副作用
@@ -69,7 +69,7 @@ export const createWorkInProgress = (
 		wip.stateNode = current.stateNode;
 
 		wip.alternate = current;
-		current.stateNode = wip;
+		current.alternate = wip;
 	} else {
 		//update
 		wip.pendingProps = pendingProps;
@@ -79,8 +79,8 @@ export const createWorkInProgress = (
 	wip.type = current.type;
 	wip.updateQueue = current.updateQueue;
 	wip.child = current.child;
-	wip.memoizeProps = current.memoizeProps;
-	wip.memoizeState = current.memoizeState;
+	wip.memoizedProps = current.memoizedProps;
+	wip.memoizedState = current.memoizedState;
 
 	return wip;
 };

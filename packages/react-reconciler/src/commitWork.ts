@@ -5,7 +5,6 @@ import { HostComponent, HostRoot, HostText } from './workTags';
 let nextEffect: FiberNode | null = null;
 export const commitMutationEffects = (finishedWork: FiberNode) => {
 	nextEffect = finishedWork;
-console.warn('commitMutationEffects',finishedWork);
 
 	while (nextEffect !== null) {
 		//向下遍历
@@ -56,7 +55,7 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 
 const commitPlacement = (finishedWork: FiberNode) => {
 	if (__DEV__) {
-		console.warn('zhixingPlacementcaozuo', finishedWork);
+		console.warn('执行Placement操作', finishedWork);
 	}
 
 	//parent DOM 获得父级节点的dom元素才能执行插入
@@ -82,7 +81,7 @@ function getHostParent(fiber: FiberNode): Container | null {
 		parent = parent.return;
 	}
 	if (__DEV__) {
-		console.warn('weizhaodao hostparent', fiber);
+		console.warn('未找到 hostparent', fiber);
 	}
 	return null;
 }
@@ -92,6 +91,8 @@ function appendPlacementNodeIntoContainer(
 	hostParent: Container
 ) {
 	//fiber root
+	// append 之前应该先确认下 finishedWork 是  HostComponent HostText 才可以 append
+	// 因为对于需要append的tag类型不可能是HostRoot类型的，子 dom要是div 或者 直接是字符才可以append
 	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
 		appendChildToContainer(hostParent, finishedWork.stateNode);
 		return;

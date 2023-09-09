@@ -17,11 +17,11 @@ export const completeWork = (wip: FiberNode) => {
 
 	switch (wip.tag) {
 		case HostComponent:
+			//检查当前 Fiber 是否存在对应的 DOM 实例
 			if (current !== null && wip.stateNode) {
 				//update
 			} else {
 				//mount
-				console.warn('HostComponent')
 				//1. 构建DOM
 				//				const instance = createInstance(wip.type, newProps);
 				const instance = createInstance(wip.type);
@@ -60,8 +60,9 @@ export const completeWork = (wip: FiberNode) => {
 
 function appendAllChildren(parent: Container, wip: FiberNode) {
 	let node = wip.child;
+
 	while (node !== null) {
-		if (node.tag === HostComponent || node.tag === HostText) {
+		if (node?.tag === HostComponent || node?.tag === HostText) {
 			appendInitialChild(parent, node?.stateNode);
 		} else if (node.child !== null) {
 			node.child.return = node;
