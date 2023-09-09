@@ -40,9 +40,11 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 	) {
 		//判断当前fiber的类型
 		if (typeof newChild === 'object' && newChild !== null) {
-			switch (newChild.$$typepf) {
+			switch (newChild.$$typeof) {
 				case REACT_ELEMENT_TYPE:
-					return reconcileSingleElement(returnFiber, currentFiber, newChild);
+					return placeSingleChild(
+						reconcileSingleElement(returnFiber, currentFiber, newChild)
+					);
 				default:
 					if (__DEV__) {
 						console.warn('未实现的reconcile类型', newChild);
@@ -54,7 +56,9 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 
 		// HostText
 		if (typeof newChild === 'string' || typeof newChild === 'number') {
-			return reconcileSingleElement(returnFiber, currentFiber, newChild);
+			return placeSingleChild(
+				reconcileSingleTextNode(returnFiber, currentFiber, newChild)
+			);
 		}
 
 		if (__DEV__) {

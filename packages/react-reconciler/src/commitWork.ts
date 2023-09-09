@@ -5,6 +5,7 @@ import { HostComponent, HostRoot, HostText } from './workTags';
 let nextEffect: FiberNode | null = null;
 export const commitMutationEffects = (finishedWork: FiberNode) => {
 	nextEffect = finishedWork;
+console.warn('commitMutationEffects',finishedWork);
 
 	while (nextEffect !== null) {
 		//向下遍历
@@ -12,8 +13,9 @@ export const commitMutationEffects = (finishedWork: FiberNode) => {
 
 		if (
 			(nextEffect.subtreeFlags & MutationMask) !== NoFlags &&
-			child !== null
+			child !== null //存在mutation阶段需要执行的操作
 		) {
+			//说明子节点有存在mutation阶段需要执行的操作
 			nextEffect = child;
 		} else {
 			//不存在subtreeFlags的情况
@@ -22,6 +24,7 @@ export const commitMutationEffects = (finishedWork: FiberNode) => {
 				commitMutationEffectsOnFiber(nextEffect);
 				//执行找sibling
 				const sibling: FiberNode | null = nextEffect.sibling;
+
 				if (sibling !== null) {
 					nextEffect = sibling;
 					break up;
@@ -90,7 +93,7 @@ function appendPlacementNodeIntoContainer(
 ) {
 	//fiber root
 	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-		appendChildToContainer(finishedWork.stateNode, hostParent);
+		appendChildToContainer(hostParent, finishedWork.stateNode);
 		return;
 	}
 	const child = finishedWork.child;

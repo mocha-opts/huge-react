@@ -15,7 +15,7 @@ const ReactElement = function (
 	props: Props
 ): ReactElementType {
 	const element = {
-		$$typepf: REACT_ELEMENT_TYPE,
+		$$typeof: REACT_ELEMENT_TYPE,
 		type,
 		key,
 		ref,

@@ -7,6 +7,10 @@ export const createInstance = (type: string): Instance => {
 	return element;
 };
 
+export const createTextInstance = (content: string) => {
+	return document.createTextNode(content);
+};
+
 export const appendInitialChild = (
 	parent: Instance | Container,
 	child: Instance
@@ -14,8 +18,6 @@ export const appendInitialChild = (
 	parent.appendChild(child);
 };
 
-export const createTextInstance = (content: string) => {
-	return document.createTextNode(content);
-};
+
 
 export const appendChildToContainer = appendInitialChild;

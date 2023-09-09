@@ -11,16 +11,16 @@ export const beginWork = (wip: FiberNode) => {
 		case HostRoot:
 			return updateHostRoot(wip);
 		case HostComponent:
-			return null;
+			return updateHostComponent(wip);
 		case HostText:
 			return null;
 		default:
 			if (__DEV__) {
 				console.warn('beginWork未实现的类型');
 			}
-			return null;
 			break;
 	}
+	return null;
 };
 
 function updateHostRoot(wip: FiberNode) {

@@ -21,6 +21,7 @@ export const completeWork = (wip: FiberNode) => {
 				//update
 			} else {
 				//mount
+				console.warn('HostComponent')
 				//1. 构建DOM
 				//				const instance = createInstance(wip.type, newProps);
 				const instance = createInstance(wip.type);
@@ -35,9 +36,11 @@ export const completeWork = (wip: FiberNode) => {
 				//update
 			} else {
 				//mount
+				console.warn('HostText')
+
 				//1. 构建DOM
 				// const instance = createTextInstance(wip.type, newProps);
-				const instance = createTextInstance(wip.type);
+				const instance = createTextInstance(newProps.content);
 
 				wip.stateNode = instance;
 			}

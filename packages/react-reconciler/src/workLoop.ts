@@ -1,4 +1,5 @@
 import { beginWork } from './beginWork';
+import { commitMutationEffects } from './commitWork';
 import { completeWork } from './completeWork';
 import { FiberNode, FiberRootNode, createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
@@ -33,6 +34,7 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
 function renderRoot(root: FiberRootNode) {
 	//初始化 让workInProgress指向第一个FiberNode
 	prepareFreshStack(root);
+
 	//接着进入workloop更新的流程
 	do {
 		try {
@@ -45,9 +47,11 @@ function renderRoot(root: FiberRootNode) {
 			workInProgress = null;
 		}
 	} while (true);
-	const finishedWork = root.current.alternate;
-	root.finishedWork = finishedWork;
 
+	const finishedWork = root.current.alternate;
+	console.warn('commitRoot', root);
+
+	root.finishedWork = finishedWork;
 	commitRoot(root);
 }
 
@@ -67,12 +71,18 @@ function commitRoot(root: FiberRootNode) {
 		const subtreeHasEffect =
 			(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
 		const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+
 		if (subtreeHasEffect || rootHasEffect) {
+			//执行子阶段
 			//beforeMutation
+
 			//mutation Placement
+			commitMutationEffects(finishedWork);
+
 			root.current = finishedWork;
 			//layout
 		} else {
+			//不存在对应的操作
 			root.current = finishedWork;
 		}
 	}
