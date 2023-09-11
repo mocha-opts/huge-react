@@ -36,8 +36,6 @@ export const completeWork = (wip: FiberNode) => {
 				//update
 			} else {
 				//mount
-				console.warn('HostText')
-
 				//1. 构建DOM
 				// const instance = createTextInstance(wip.type, newProps);
 				const instance = createTextInstance(newProps.content);
