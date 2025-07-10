@@ -56,6 +56,7 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 const commitPlacement = (finishedWork: FiberNode) => {
 	if (__DEV__) {
 		console.warn('执行Placement操作', finishedWork);
+		console.log('finishedWork', finishedWork);
 	}
 
 	//parent DOM 获得父级节点的dom元素才能执行插入
