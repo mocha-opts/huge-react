@@ -66,6 +66,7 @@ function mountState<State>(
 	hook.updateQueue = queue;
 	hook.memoizedState = memoizedState;
 
+	//@ts-ignore
 	const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
 	//function App(){
 	//	const [x,dispatch] = 	useState()

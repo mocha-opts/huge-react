@@ -18,6 +18,4 @@ export const appendInitialChild = (
 	parent.appendChild(child);
 };
 
-
-
 export const appendChildToContainer = appendInitialChild;
