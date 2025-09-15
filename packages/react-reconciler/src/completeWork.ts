@@ -12,6 +12,7 @@ import {
 	HostText
 } from './workTags';
 import { NoFlags, Update } from './fiberFlags';
+import { updateFiberProps } from 'react-dom/src/SyntheticEvent';
 
 //递归中的递
 export const completeWork = (wip: FiberNode) => {
@@ -26,11 +27,16 @@ export const completeWork = (wip: FiberNode) => {
 			if (current !== null && wip.stateNode) {
 				//update
 				//比如class a -> b 标记更新
+				//1.props 是否变化 {onClick:xx} {onClick:xx}
+				//2.变了 打 Update flag -> 然后到commit阶段的CommitWork 中的commitUpdate方法 ->HostConfig中调用
+				//FiberNode.updateQueue = [className,'aaa',title,"222"]
+				//TODO 判断变化
+				updateFiberProps(wip.stateNode, newProps);
 			} else {
 				//mount
 				//1. 构建DOM
 				//				const instance = createInstance(wip.type, newProps);
-				const instance = createInstance(wip.type);
+				const instance = createInstance(wip.type, newProps);
 				//2. 将DOM插入到DOM树中
 				appendAllChildren(instance, wip);
 				wip.stateNode = instance;
