@@ -11,7 +11,7 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags } from './fiberFlags';
+import { NoFlags, Update } from './fiberFlags';
 
 //递归中的递
 export const completeWork = (wip: FiberNode) => {
@@ -25,6 +25,7 @@ export const completeWork = (wip: FiberNode) => {
 			//检查当前 Fiber 是否存在对应的 DOM 实例
 			if (current !== null && wip.stateNode) {
 				//update
+				//比如class a -> b 标记更新
 			} else {
 				//mount
 				//1. 构建DOM
@@ -39,6 +40,11 @@ export const completeWork = (wip: FiberNode) => {
 		case HostText:
 			if (current !== null && wip.stateNode) {
 				//update
+				const oldText = current.memoizedProps.content;
+				const newText = newProps.content;
+				if (oldText !== newText) {
+					markUpdate(wip);
+				}
 			} else {
 				//mount
 				//1. 构建DOM
@@ -102,4 +108,7 @@ function bubbleProperties(wip: FiberNode) {
 		child = child.sibling;
 	}
 	wip.subtreeFlags |= subtreeFlags;
+}
+function markUpdate(fiber: FiberNode) {
+	fiber.flags |= Update;
 }

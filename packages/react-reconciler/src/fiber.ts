@@ -20,7 +20,7 @@ export class FiberNode {
 	flags: Flags;
 	subtreeFlags: Flags;
 	updateQueue: unknown;
-
+	deletions: FiberNode[] | null;
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
 		//实例的属性
 		this.tag = tag;
@@ -43,6 +43,7 @@ export class FiberNode {
 		//副作用
 		this.flags = NoFlags;
 		this.subtreeFlags = NoFlags;
+		this.deletions = null;
 	}
 }
 export class FiberRootNode {
@@ -61,7 +62,7 @@ export const createWorkInProgress = (
 	current: FiberNode,
 	pendingProps: Props
 ): FiberNode => {
-	let wip = current.alternate;
+	let wip = current.alternate; //双缓存树中的一个节点对应的另一个节点
 
 	if (wip === null) {
 		//mount
@@ -75,6 +76,7 @@ export const createWorkInProgress = (
 		wip.pendingProps = pendingProps;
 		wip.flags = NoFlags;
 		wip.subtreeFlags = NoFlags;
+		wip.deletions = null;
 	}
 	wip.type = current.type;
 	wip.updateQueue = current.updateQueue;
