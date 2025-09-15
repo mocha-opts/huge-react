@@ -45,7 +45,8 @@ export const renderWithHooks = (wip: FiberNode) => {
 
 	const Component = wip.type; //函数保存在wip.type上
 	const props = wip.pendingProps;
-	const children = Component(props); //执行函数，得到子元素
+	const children = Component(props); // FC render
+	//执行函数，得到子元素
 
 	//重置操作
 	currentlyRenderingFiber = null;
@@ -83,6 +84,7 @@ function mountState<State>(
 	//	const [x,dispatch] = 	useState()
 	// window.dispatch = dispatch; //也能执行成功，这是因为dispatchSetState绑定了当前的fiber
 	//}
+	queue.dispatch = dispatch;
 	return [memoizedState, dispatch];
 }
 
