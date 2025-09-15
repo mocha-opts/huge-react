@@ -1,7 +1,9 @@
 import {
 	Container,
+	Instance,
 	appendChildToContainer,
 	commitUpdate,
+	insertChildToContainer,
 	removeChild
 } from 'hostConfig';
 import { FiberNode, FiberRootNode } from './fiber';
@@ -182,12 +184,50 @@ const commitPlacement = (finishedWork: FiberNode) => {
 
 	//parent DOM 获得父级节点的dom元素才能执行插入
 	const hostParent = getHostParent(finishedWork);
+	//host sibling
+	const sibling = getHostSibling(finishedWork);
 
-	//finishedWork ~~DOM
+	//finishedWork ~~DOM append parent DOM
 	if (hostParent !== null)
-		appendPlacementNodeIntoContainer(finishedWork, hostParent);
+		insertOrAppendPlacementNodeIntoContainer(finishedWork, hostParent, sibling);
 };
-
+//先遍历同级的兄弟节点，每遍历到的同时都向下遍历 找它子孙节点中的Host类型，如果找到了一个稳定的且为Host类型的节点就返回
+//如果向下遍历没找到且所有兄弟节点都没找到， 就向上遍历，找他父节点的兄弟节点，直到找到兄弟节点为止
+function getHostSibling(fiber: FiberNode) {
+	let node: FiberNode = fiber;
+	findSibling: while (true) {
+		//向上遍历
+		while (node.sibling === null) {
+			const parent = node.return;
+			if (
+				parent === null ||
+				parent.tag === HostComponent ||
+				parent.tag === HostRoot
+			) {
+				return null;
+			}
+			node = parent;
+		}
+		node.sibling.return = node.return;
+		node = node.sibling;
+		//说明直接sibling不是Host类型
+		while (node.tag !== HostText && node.tag !== HostComponent) {
+			//向下遍历
+			if ((node.flags & Placement) !== NoFlags) {
+				continue findSibling;
+			}
+			if (node.child === null) {
+				continue findSibling;
+			} else {
+				node.child.return = node;
+				node = node.child;
+			}
+		}
+		if ((node.flags & Placement) === NoFlags) {
+			return node.stateNode;
+		}
+	}
+}
 function getHostParent(fiber: FiberNode): Container | null {
 	//向上遍历的过程
 	let parent = fiber.return;
@@ -208,23 +248,32 @@ function getHostParent(fiber: FiberNode): Container | null {
 	return null;
 }
 
-function appendPlacementNodeIntoContainer(
+function insertOrAppendPlacementNodeIntoContainer(
 	finishedWork: FiberNode,
-	hostParent: Container
+	hostParent: Container,
+	before?: Instance
 ) {
 	//fiber root
 	// append 之前应该先确认下 finishedWork 是  HostComponent HostText 才可以 append
 	// 因为对于需要append的tag类型不可能是HostRoot类型的，子 dom要是div 或者 直接是字符才可以append
 	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-		appendChildToContainer(hostParent, finishedWork.stateNode);
+		if (before) {
+			insertChildToContainer(
+				finishedWork.stateNode,
+				hostParent,
+				before as Instance
+			);
+		} else {
+			appendChildToContainer(hostParent, finishedWork.stateNode);
+		}
 		return;
 	}
 	const child = finishedWork.child;
 	if (child !== null) {
-		appendPlacementNodeIntoContainer(child, hostParent);
+		insertOrAppendPlacementNodeIntoContainer(child, hostParent);
 		let sibling = child.sibling;
 		while (sibling !== null) {
-			appendPlacementNodeIntoContainer(sibling, hostParent);
+			insertOrAppendPlacementNodeIntoContainer(sibling, hostParent);
 			sibling = sibling.sibling;
 		}
 	}
