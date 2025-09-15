@@ -24,36 +24,55 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 			deletions.push(childToDelete);
 		}
 	}
-
+	function deleteRemainingChildren(
+		returnFiber: FiberNode,
+		currentFirstChild: FiberNode | null
+	) {
+		if (!shouldTrackEffects) {
+			//如果不用追踪副作用 直接return
+			return;
+		}
+		let childToDelete = currentFirstChild; //从第一个开始删除
+		while (childToDelete !== null) {
+			//遍历删除
+			deleteChild(returnFiber, childToDelete);
+			childToDelete = childToDelete.sibling;
+		}
+	}
 	function reconcileSingleElement(
 		returnFiber: FiberNode,
 		currentFiber: FiberNode | null,
 		element: ReactElementType
 	) {
 		const key = element?.key;
-		work: if (currentFiber !== null) {
-			//key相同
-			if (key === currentFiber.key) {
+		while (currentFiber !== null) {
+			if (currentFiber.key === key) {
+				//key相同
+
 				if (element.$$typeof === REACT_ELEMENT_TYPE) {
-					//type相同
-					if (element.type === currentFiber.type) {
+					if (currentFiber.type === element.type) {
+						//type相同
 						const existing = useFiber(currentFiber, element.props);
 						existing.return = returnFiber; //更新父节点的指向
+						// A1B2C3 -> A1 当前节点可复用，还得标记剩下节点删除
+						deleteRemainingChildren(returnFiber, currentFiber.sibling);
 						return existing;
 					}
-					//type不同
-					deleteChild(returnFiber, currentFiber);
-					break work;
+					//key 相同 type不同 不能复用 A1B2C3 -> C1A2B3
+					//删掉所有旧的
+					deleteRemainingChildren(returnFiber, currentFiber);
+					break;
 				} else {
 					if (__DEV__) {
 						console.warn('未实现的react类型', element);
-						break work;
+						break;
 					}
 				}
 			} else {
 				//key不同
 				//删掉旧的
 				deleteChild(returnFiber, currentFiber);
+				currentFiber = currentFiber.sibling;
 			}
 		}
 		//根据element创建一个fiber
@@ -66,15 +85,18 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 		currentFiber: FiberNode | null,
 		content: string | number
 	) {
-		if (currentFiber !== null) {
-			//类型相同
+		while (currentFiber !== null) {
+			//update
 			if (currentFiber.tag === HostText) {
+				//类型没变 可以复用
 				const existing = useFiber(currentFiber, { content }); //props是包含了content字段的props
 				existing.return = returnFiber;
+				deleteRemainingChildren(returnFiber, currentFiber.sibling);
 				return existing;
 			}
 			//不同
 			deleteChild(returnFiber, currentFiber);
+			currentFiber = currentFiber.sibling;
 		}
 		//然后进入创建新的hostText的流程
 		//根据element创建一个fiber
