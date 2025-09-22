@@ -87,27 +87,45 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 		finishedWork.flags &= ~Placement;
 	}
 };
+
+function recordHostChildrenToDelete(
+	childrenToDelete: FiberNode[],
+	unmountFiber: FiberNode
+) {
+	//1.找到第一个root host节点
+	const lastOne = childrenToDelete[childrenToDelete.length - 1];
+	if (!lastOne) {
+		childrenToDelete.push(unmountFiber);
+	} else {
+		let node = lastOne.sibling;
+		while (node !== null) {
+			if (node === unmountFiber) {
+				childrenToDelete.push(unmountFiber);
+			}
+
+			node = node.sibling;
+		}
+	}
+	//2.每找到一个host节点，判断下这个节点是不是 1找到那个节点的兄弟节点
+}
 //递归删除子树，
 // 1.fc 执行相对应的useEffect unmount 解绑ref等
 // 2.hostcomponent 解绑ref
 // 3.对于子树的根hostcomponent需要移除dom
 const commitDeletion = (childToDelete: FiberNode) => {
 	//
-	let rootHostNode: FiberNode | null = null;
+	const rootChildrenToDelete: FiberNode[] = [];
 
 	//递归子树
 	commitNestedComponent(childToDelete, (unmountFiber: FiberNode) => {
 		switch (unmountFiber.tag) {
 			case HostComponent:
-				if (rootHostNode === null) {
-					rootHostNode = unmountFiber;
-				}
+				recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
 				//TODO 解绑ref
 				return;
 			case HostText:
-				if (rootHostNode === null) {
-					rootHostNode = unmountFiber;
-				}
+				recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
+
 				//TODO 解绑ref
 				return;
 			case FunctionComponent:
@@ -122,10 +140,12 @@ const commitDeletion = (childToDelete: FiberNode) => {
 	});
 
 	//移除rootHostComponent的DOM
-	if (rootHostNode !== null) {
-		const hostParent = getHostParent(rootHostNode); //先找到hostparent,即要删掉的子树中的根fiber节点的host类型parent
+	if (rootChildrenToDelete.length) {
+		const hostParent = getHostParent(childToDelete); //先找到hostparent,即要删掉的子树中的根fiber节点的host类型parent
 		if (hostParent !== null) {
-			removeChild((rootHostNode as FiberNode).stateNode, hostParent); //hostconfig中 ，然后在这个hostParent中删除下面的节点
+			rootChildrenToDelete.forEach((node) => {
+				removeChild((node as FiberNode).stateNode, hostParent); //hostconfig中 ，然后在这个hostParent中删除下面的节点
+			});
 		}
 	}
 	childToDelete.return = null;
