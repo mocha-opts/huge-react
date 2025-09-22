@@ -9,6 +9,7 @@ import {
 } from './updateQueue';
 import { ReactElementType } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
+import { requestUpdateLane } from './fiberLanes';
 //mount时调用的api
 //ReactDOM.createRoot 就会调用createContainer
 
@@ -27,12 +28,13 @@ export function updateContainer(
 	root: FiberRootNode
 ) {
 	const hostRootFiber = root.current;
-	const update = createUpdate<ReactElementType | null>(element); //首屏渲染需要创建一个更新，这次更新和element相关
+	const lane = requestUpdateLane();
+	const update = createUpdate<ReactElementType | null>(element, lane); //首屏渲染需要创建一个更新，这次更新和element相关
 	//创建完update后，要插入到hostrootFiber的updateQueue中
 	enqueueUpdate(
 		hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,
 		update
 	);
-	scheduleUpdateOnFiber(hostRootFiber);
+	scheduleUpdateOnFiber(hostRootFiber, lane);
 	return element;
 }

@@ -10,11 +10,12 @@ import {
 } from './updateQueue';
 import { Action } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
+import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
 
 let currentlyRenderingFiber: FiberNode | null = null;
 let workInProgressHook: Hook | null = null;
 let currentHook: Hook | null = null;
-
+let renderLane: Lane = NoLane;
 const { currentDispatcher } = internals;
 
 //存在fiberNode的memoizedState 指向的是 一条保存了hooks的单向链表 (useSate->useEffect->useContext->useSate)
@@ -25,13 +26,15 @@ interface Hook {
 	next: Hook | null;
 }
 
-export const renderWithHooks = (wip: FiberNode) => {
+export const renderWithHooks = (wip: FiberNode, lane: Lane) => {
 	//记录当前正在render的FC对应的fibernode
 	currentlyRenderingFiber = wip;
 
 	//mount时要重置 保存hooks的链表
 	wip.memoizedState = null; //重置，在下面的代码中间就会创建hooks相应的链表
-	wip.updateQueue = null;
+	// wip.updateQueue = null;
+
+	renderLane = lane;
 
 	const current = wip.alternate;
 
@@ -52,6 +55,7 @@ export const renderWithHooks = (wip: FiberNode) => {
 	currentlyRenderingFiber = null;
 	workInProgressHook = null;
 	currentHook = null;
+	renderLane = NoLane;
 	return children;
 };
 
@@ -97,7 +101,11 @@ function updateState<State>(): [State, Dispatch<State>] {
 	const pending = queue.shared.pending;
 	if (pending !== null) {
 		//对于一个usestate memoizedState就是保存了他的状态
-		const { memoizedState } = processUpdateQueue(hook.memoizedState, pending);
+		const { memoizedState } = processUpdateQueue(
+			hook.memoizedState,
+			pending,
+			renderLane
+		);
 		hook.memoizedState = memoizedState;
 	}
 
@@ -168,10 +176,11 @@ function dispatchSetState<State>(
 	updateQueue: UpdateQueue<State>,
 	action: Action<State>
 ) {
+	const lane = requestUpdateLane();
 	//和hostroot更新流程类似
-	const update = createUpdate(action);
+	const update = createUpdate(action, lane);
 	enqueueUpdate(updateQueue, update);
-	scheduleUpdateOnFiber(fiber); //对于触发更新的FC 对应的fiber进行schedule
+	scheduleUpdateOnFiber(fiber, lane); //对于触发更新的FC 对应的fiber进行schedule
 }
 function mountWorkInProgressHook(): Hook {
 	const hook: Hook = {
