@@ -23,6 +23,7 @@ function App() {
 			<li>3</li>
 			<li>4</li>
 			{arr}
+			{num}
 		</ul>
 	);
 }

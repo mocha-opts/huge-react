@@ -99,6 +99,7 @@ function updateState<State>(): [State, Dispatch<State>] {
 	//依据update来计算，它保存在queue里
 	const queue = hook.updateQueue as UpdateQueue<State>;
 	const pending = queue.shared.pending;
+	queue.shared.pending = null;
 	if (pending !== null) {
 		//对于一个usestate memoizedState就是保存了他的状态
 		const { memoizedState } = processUpdateQueue(
