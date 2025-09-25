@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 // console.log(import.meta.hot);
 function App() {
-	const [num, setNum] = useState(100);
+	const [num, setNum] = useState(0);
 	useEffect(() => {
 		console.log('App mount');
 	}, []);

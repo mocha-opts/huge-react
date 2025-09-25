@@ -37,7 +37,7 @@ export const commitMutationEffects = (
 		const child: FiberNode | null = nextEffect.child;
 
 		if (
-			(nextEffect.subtreeFlags & (MutationMask & PassiveMask)) !== NoFlags &&
+			(nextEffect.subtreeFlags & (MutationMask | PassiveMask)) !== NoFlags &&
 			child !== null //存在mutation阶段需要执行的操作
 		) {
 			//说明子节点有存在mutation阶段需要执行的操作
