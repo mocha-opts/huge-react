@@ -9,6 +9,7 @@ import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig'; //宿主环境是单独包
 import { REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols';
 import { Lane, Lanes, NoLane, NoLanes } from './fiberLanes';
+import { Effect } from './fiberHooks';
 
 export class FiberNode {
 	type: any;
@@ -45,13 +46,19 @@ export class FiberNode {
 		this.pendingProps = pendingProps;
 		this.memoizedProps = null;
 		this.memoizedState = null;
-		this.alternate = null;
 		this.updateQueue = null;
+
+		this.alternate = null;
 		//副作用
 		this.flags = NoFlags;
 		this.subtreeFlags = NoFlags;
 		this.deletions = null;
 	}
+}
+
+export interface PendingPassiveEffects {
+	unmount: Effect[];
+	update: Effect[];
 }
 export class FiberRootNode {
 	container: Container; //宿主环境挂载的节点rootElement
@@ -59,6 +66,7 @@ export class FiberRootNode {
 	finishedWork: FiberNode | null;
 	pendingLanes: Lanes;
 	finishLane: Lane;
+	pendingPassiveEffects: PendingPassiveEffects;
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
@@ -66,6 +74,7 @@ export class FiberRootNode {
 		this.finishedWork = null;
 		this.pendingLanes = NoLanes;
 		this.finishLane = NoLane;
+		this.pendingPassiveEffects = { unmount: [], update: [] }; // unmount时执行的destort回调和update时执行的create回调
 	}
 }
 

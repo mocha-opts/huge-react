@@ -4,9 +4,9 @@ export type Lane = number;
 
 export type Lanes = number;
 
-export const NoLane = 0b000;
+export const NoLane = 0b0000;
 
-export const SyncLane = 0b001;
+export const SyncLane = 0b0001;
 
 // export const InputContinuousLane = 0b0000000000000000000000000100000;
 
@@ -14,7 +14,7 @@ export const SyncLane = 0b001;
 
 // export const IdleLane = 0b1000000000000000000000000000000;
 
-export const NoLanes = 0b000;
+export const NoLanes = 0b0000;
 
 export const NoTimestamp = -1;
 

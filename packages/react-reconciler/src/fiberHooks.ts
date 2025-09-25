@@ -46,10 +46,10 @@ export const renderWithHooks = (wip: FiberNode, lane: Lane) => {
 	//记录当前正在render的FC对应的fibernode
 	currentlyRenderingFiber = wip;
 
-	//mount时要重置 保存hooks的链表
-	wip.memoizedState = null; //重置，在下面的代码中间就会创建hooks相应的链表
-	// wip.updateQueue = null;
-
+	//mount时要重置 保存hooks的链表 重置 hooks链表
+	wip.memoizedState = null;
+	//重置effect链表
+	wip.updateQueue = null;
 	renderLane = lane;
 
 	const current = wip.alternate;
@@ -96,6 +96,46 @@ function mountEffect(create: EffectCallback | void, deps: EffectDeps | void) {
 		nextDeps
 	);
 }
+function updateEffect(create: EffectCallback | void, deps: EffectDeps | void) {
+	const hook = updateWorkInProgressHook();
+	const nextDeps = deps === undefined ? null : deps;
+	let destroy: EffectCallback | void;
+	if (currentHook != null) {
+		//
+		const prevEffect = currentHook.memoizedState as Effect; //当前Hook在上一次更新时对应的effect
+		destroy = prevEffect.destroy;
+		if (nextDeps !== null) {
+			//进行依赖比较
+			const prevDeps = prevEffect.deps;
+			if (areHookInputsEqual(nextDeps, prevDeps)) {
+				//依赖没有变化 不需要执行create
+				hook.memoizedState = pushEffect(Passive, create, destroy, nextDeps);
+				return;
+			}
+		}
+		//浅比较不相等
+		(currentlyRenderingFiber as FiberNode).flags |= PassiveEffect;
+		hook.memoizedState = pushEffect(
+			Passive | HookHasEffect,
+			create,
+			destroy,
+			nextDeps
+		);
+	}
+}
+function areHookInputsEqual(nextDeps: EffectDeps, prevDeps: EffectDeps) {
+	//useEffect(()=>{},) 没有传入依赖的情况
+	if (prevDeps === null || nextDeps === null) {
+		return false;
+	}
+	for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+		if (Object.is(prevDeps[i], nextDeps[i])) {
+			continue;
+		}
+		return false;
+	}
+	return true;
+}
 
 function pushEffect(
 	hookFlags: Flags,
@@ -141,9 +181,6 @@ function createFCUpdateQueue<State>() {
 	return updateQueue;
 }
 
-function updateEffect(create: EffectCallback | void, deps: EffectDeps | void) {
-	return null;
-}
 function mountState<State>(
 	initialState: (() => State) | State
 ): [State, Dispatch<State>] {
