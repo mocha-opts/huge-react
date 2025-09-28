@@ -55,6 +55,6 @@
 	},
 	"dependencies": {
 		"@rollup/plugin-replace": "^5.0.2",
-		"scheduler": "^0.23.0"
+		"scheduler": "^0.16.2"
 	}
 }
