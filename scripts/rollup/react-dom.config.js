@@ -26,7 +26,7 @@ export default [
 			}
 		],
 		//把react包的代码排除
-		external: [...Object.keys(peerDependencies)],
+		external: [...Object.keys(peerDependencies), 'scheduler'],
 		plugins: [
 			...getBaseRollupPlugins(),
 			//webpack resolve alias

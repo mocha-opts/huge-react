@@ -1,5 +1,6 @@
 import {
 	Container,
+	Instance,
 	appendInitialChild,
 	createInstance,
 	createTextInstance
@@ -13,7 +14,6 @@ import {
 	HostText
 } from './workTags';
 import { NoFlags, Update } from './fiberFlags';
-import { updateFiberProps } from 'react-dom/src/SyntheticEvent';
 
 //递归中的递
 export const completeWork = (wip: FiberNode) => {
@@ -32,7 +32,8 @@ export const completeWork = (wip: FiberNode) => {
 				//2.变了 打 Update flag -> 然后到commit阶段的CommitWork 中的commitUpdate方法 ->HostConfig中调用
 				//FiberNode.updateQueue = [className,'aaa',title,"222"]
 				//TODO 判断变化
-				updateFiberProps(wip.stateNode, newProps);
+				// updateFiberProps(wip.stateNode, newProps);
+				markUpdate(wip);
 			} else {
 				//mount
 				//1. 构建DOM
@@ -76,7 +77,7 @@ export const completeWork = (wip: FiberNode) => {
 	}
 };
 
-function appendAllChildren(parent: Container, wip: FiberNode) {
+function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
 	let node = wip.child;
 
 	while (node !== null) {
