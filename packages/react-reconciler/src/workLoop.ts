@@ -87,12 +87,17 @@ function ensureRootIsScheduled(root: FiberRootNode) {
 		unstable_cancelCallback(existingCallback);
 	}
 	let newCallbackNode = null;
+
+	if (__DEV__) {
+		console.log(
+			`在${updateLane === SyncLane ? '微' : '宏'}任务中调度更新,优先级：`,
+			updateLane
+		);
+	}
 	//优先级是否是同步
 	if (updateLane === SyncLane) {
 		//同步优先级 用微任务调度
-		if (__DEV__) {
-			console.log('在微任务中调度更新,优先级：', updateLane);
-		}
+
 		//onClick中三个setState 也就会创建三个更新任务
 		//最终会变成三个performSyncWorkOnRoot任务
 		//[performSyncWorkOnRoot,performSyncWorkOnRoot,performSyncWorkOnRoot]
