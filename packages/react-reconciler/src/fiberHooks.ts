@@ -6,6 +6,7 @@ import {
 	createUpdateQueue,
 	enqueueUpdate,
 	processUpdateQueue,
+	Update,
 	UpdateQueue
 } from './updateQueue';
 import { Action } from 'shared/ReactTypes';
@@ -26,6 +27,8 @@ interface Hook {
 	memoizedState: any;
 	updateQueue: any;
 	next: Hook | null;
+	baseState: any;
+	baseQueue: Update<any> | null;
 }
 
 export interface Effect {
@@ -212,16 +215,51 @@ function updateState<State>(): [State, Dispatch<State>] {
 	//实现update中计算新state的逻辑
 	//依据update来计算，它保存在queue里
 	const queue = hook.updateQueue as UpdateQueue<State>;
+	const baseState = hook.baseState;
 	const pending = queue.shared.pending;
-	queue.shared.pending = null;
+	const current = currentHook as Hook;
+	let baseQueue = current.baseQueue;
+
+	//一定会执行更新  但有了并发更新 ，这次更新可能被高优打断 ，
+	// 低优更新一旦被赋值为null 已经计算出来一个结果，这个结果还没到commit阶段就被打断了，重新开始一个高优先级的更新，name低优先级的更新被清零
+	// queue.shared.pending = null;
+	//所以需要保存在current中
+
 	if (pending !== null) {
 		//对于一个usestate memoizedState就是保存了他的状态
-		const { memoizedState } = processUpdateQueue(
-			hook.memoizedState,
-			pending,
-			renderLane
-		);
-		hook.memoizedState = memoizedState;
+
+		//pending baseQueue update保存在current中
+		if (baseQueue !== null) {
+			//存在 就和pendingqueue 合并
+			// baseQueue b2 -> b0 -> b1 -> b2
+			//pendingQueue p2 -> p0 -> p1 -> p2
+
+			// b0
+			const baseFirst = baseQueue.next;
+			// p0
+			const pendingFirst = pending.next;
+			//b2指向p0  b2 -> p0
+			baseQueue.next = pendingFirst;
+			//p2指向p0  p2 -> b0
+			pending.next = baseFirst;
+
+			//最终 p2->b0->b1->b2->p0->p1->p2
+		}
+		baseQueue = pending;
+		//保存在current中
+		current.baseQueue = pending;
+		queue.shared.pending = null;
+
+		if (baseQueue !== null) {
+			const {
+				memoizedState,
+				baseQueue: newBaseQueue,
+				baseState: newBaseState
+			} = processUpdateQueue(hook.memoizedState, baseQueue, renderLane);
+			hook.memoizedState = memoizedState;
+			hook.baseState = newBaseState;
+			hook.baseQueue = newBaseQueue;
+		}
 	}
 
 	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
@@ -264,8 +302,10 @@ function updateWorkInProgressHook(): Hook {
 	currentHook = nextCurrentHook as Hook;
 	//基于之前的u1复制成新的hook
 	const newHook: Hook = {
-		memoizedState: currentHook?.memoizedState,
-		updateQueue: currentHook?.updateQueue,
+		memoizedState: currentHook.memoizedState,
+		updateQueue: currentHook.updateQueue,
+		baseState: currentHook.baseState,
+		baseQueue: currentHook.baseQueue,
 		next: null
 	};
 	//接下来和mount一样，更新workInProgressHook
@@ -301,6 +341,8 @@ function mountWorkInProgressHook(): Hook {
 	const hook: Hook = {
 		memoizedState: null,
 		updateQueue: null,
+		baseState: null,
+		baseQueue: null,
 		next: null
 	};
 	if (workInProgressHook === null) {
