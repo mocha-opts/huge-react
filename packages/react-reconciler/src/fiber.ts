@@ -25,7 +25,7 @@ export class FiberNode {
 	index: number;
 	memoizedProps: Props | null;
 	memoizedState: any; //更新完成后新的state
-	ref: Ref;
+	ref: Ref | null;
 	alternate: FiberNode | null;
 	flags: Flags;
 	subtreeFlags: Flags;

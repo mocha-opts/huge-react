@@ -46,7 +46,8 @@ function updateContextProvider(wip: FiberNode) {
 	const newProps = wip.pendingProps;
 
 	pushProvider(context, newProps.value);
-	const nextChildren = wip.pendingProps;
+
+	const nextChildren = newProps.children;
 	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }

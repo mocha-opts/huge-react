@@ -241,7 +241,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 			const fiber = new FiberNode(HostText, { content: element + '' }, null);
 			return fiber;
 		}
-		//2.element是ReactElement的情况
+		//2.ReactElement
 		if (typeof element === 'object' && element !== null) {
 			switch (element.$$typeof) {
 				case REACT_ELEMENT_TYPE:
@@ -268,6 +268,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 					const fiber = createFiberFromElement(element);
 					return fiber;
 				//TODO 其他内置组件
+
 				default:
 			}
 		}
