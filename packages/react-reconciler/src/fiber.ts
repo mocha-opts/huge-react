@@ -1,5 +1,6 @@
 import { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
 import {
+	ContextProvider,
 	Fragment,
 	FunctionComponent,
 	HostComponent,
@@ -7,7 +8,7 @@ import {
 } from './workTags';
 import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig'; //宿主环境是单独包
-import { REACT_FRAGMENT_TYPE } from 'shared/ReactSymbols';
+import { REACT_FRAGMENT_TYPE, REACT_PROVIDER_TYPE } from 'shared/ReactSymbols';
 import { Lane, Lanes, NoLane, NoLanes } from './fiberLanes';
 import { Effect } from './fiberHooks';
 import { CallbackNode } from 'scheduler';
@@ -24,7 +25,7 @@ export class FiberNode {
 	index: number;
 	memoizedProps: Props | null;
 	memoizedState: any; //更新完成后新的state
-	ref: Ref | null;
+	ref: Ref;
 	alternate: FiberNode | null;
 	flags: Flags;
 	subtreeFlags: Flags;
@@ -122,6 +123,11 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
 	if (typeof type === 'string') {
 		//<div/> type:'div'
 		fiberTag = HostComponent;
+	} else if (
+		typeof type === 'object' &&
+		type.$$typeof === REACT_PROVIDER_TYPE
+	) {
+		fiberTag = ContextProvider;
 	} else if (typeof type !== 'function' && __DEV__) {
 		console.warn('未定义的type类型', element);
 	}

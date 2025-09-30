@@ -10,7 +10,7 @@ import {
 	Update,
 	UpdateQueue
 } from './updateQueue';
-import { Action } from 'shared/ReactTypes';
+import { Action, ReactContext } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
 import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
 import { Flags, PassiveEffect } from './fiberFlags';
@@ -83,14 +83,16 @@ const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState,
 	useEffect: mountEffect,
 	useTransition: mountTransition,
-	useRef: mountRef
+	useRef: mountRef,
+	useContext: readContext
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
 	useState: updateState,
 	useEffect: updateEffect,
 	useTransition: updateTransition,
-	useRef: updateRef
+	useRef: updateRef,
+	useContext: readContext
 };
 
 function mountRef<T>(initialValue: T): { current: T } {
@@ -306,6 +308,47 @@ function updateState<State>(): [State, Dispatch<State>] {
 	return [hook.memoizedState, queue.dispatch as Dispatch<State>];
 }
 
+function dispatchSetState<State>(
+	fiber: FiberNode,
+	updateQueue: UpdateQueue<State>,
+	action: Action<State>
+) {
+	const lane = requestUpdateLane();
+	//和hostroot更新流程类似
+	const update = createUpdate(action, lane);
+	enqueueUpdate(updateQueue, update);
+	scheduleUpdateOnFiber(fiber, lane); //对于触发更新的FC 对应的fiber进行schedule
+}
+
+// function App(){
+// 	useState()  //这种情况下执行useState的话 currentlyRenderingFiber指向App对应的fiber
+// }
+//而不在FC组件内的话 currentlyRenderingFiber就是null
+
+function mountWorkInProgressHook(): Hook {
+	const hook: Hook = {
+		memoizedState: null,
+		updateQueue: null,
+		baseState: null,
+		baseQueue: null,
+		next: null
+	};
+	if (workInProgressHook === null) {
+		//workInProgressHook 没有hook 也就是说明这是mount时 第一个hook
+		if (currentlyRenderingFiber === null) {
+			throw new Error('请在函数组件内调用hook');
+		} else {
+			workInProgressHook = hook; //指向第一个hook
+			currentlyRenderingFiber.memoizedState = workInProgressHook;
+		}
+	} else {
+		//mount时 中间的hook
+		workInProgressHook.next = hook;
+		workInProgressHook = hook;
+	}
+	return workInProgressHook;
+}
+
 //hook数据从哪来？ =》currentHook
 //交互阶段触发的更新usestate中的setState
 //render阶段时触发的更新
@@ -351,7 +394,7 @@ function updateWorkInProgressHook(): Hook {
 	};
 	//接下来和mount一样，更新workInProgressHook
 	if (workInProgressHook === null) {
-		//workInProgressHook 没有hook 也就是说明这是mount时 第一个hook
+		//workInProgressHook 没有hook 也就是说明这是update时 第一个hook
 		if (currentlyRenderingFiber === null) {
 			throw new Error('请在函数组件内调用hook');
 		} else {
@@ -359,7 +402,6 @@ function updateWorkInProgressHook(): Hook {
 			currentlyRenderingFiber.memoizedState = workInProgressHook;
 		}
 	} else {
-		//mount时 中间的hook
 		workInProgressHook.next = newHook;
 		workInProgressHook = newHook;
 	}
@@ -367,42 +409,12 @@ function updateWorkInProgressHook(): Hook {
 	return workInProgressHook;
 }
 
-function dispatchSetState<State>(
-	fiber: FiberNode,
-	updateQueue: UpdateQueue<State>,
-	action: Action<State>
-) {
-	const lane = requestUpdateLane();
-	//和hostroot更新流程类似
-	const update = createUpdate(action, lane);
-	enqueueUpdate(updateQueue, update);
-	scheduleUpdateOnFiber(fiber, lane); //对于触发更新的FC 对应的fiber进行schedule
-}
-function mountWorkInProgressHook(): Hook {
-	const hook: Hook = {
-		memoizedState: null,
-		updateQueue: null,
-		baseState: null,
-		baseQueue: null,
-		next: null
-	};
-	if (workInProgressHook === null) {
-		//workInProgressHook 没有hook 也就是说明这是mount时 第一个hook
-		if (currentlyRenderingFiber === null) {
-			throw new Error('请在函数组件内调用hook');
-		} else {
-			workInProgressHook = hook; //指向第一个hook
-			currentlyRenderingFiber.memoizedState = workInProgressHook;
-		}
-	} else {
-		//mount时 中间的hook
-		workInProgressHook.next = hook;
-		workInProgressHook = hook;
+function readContext<T>(context: ReactContext<T>) {
+	const consumer = currentlyRenderingFiber; //当前render阶段的fiber
+	//代表了 useContext脱离了函数组件使用，比如说在window.调用useContext，此时就获取不到当前正在render的fiber
+	if (consumer === null) {
+		throw new Error('context需要有consumer，只能在函数组件中调用useContext');
 	}
-	return hook;
+	const value = context._currentValue;
+	return value;
 }
-
-// function App(){
-// 	useState()  //这种情况下执行useState的话 currentlyRenderingFiber指向App对应的fiber
-// }
-//而不在FC组件内的话 currentlyRenderingFiber就是null
