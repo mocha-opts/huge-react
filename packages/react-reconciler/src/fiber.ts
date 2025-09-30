@@ -1,4 +1,4 @@
-import { Key, Props, ReactElementType, Ref } from './../../shared/ReactTypes';
+import { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
 import {
 	Fragment,
 	FunctionComponent,
@@ -24,7 +24,7 @@ export class FiberNode {
 	index: number;
 	memoizedProps: Props | null;
 	memoizedState: any; //更新完成后新的state
-	ref: Ref;
+	ref: Ref | null;
 	alternate: FiberNode | null;
 	flags: Flags;
 	subtreeFlags: Flags;
@@ -112,12 +112,12 @@ export const createWorkInProgress = (
 	wip.child = current.child;
 	wip.memoizedProps = current.memoizedProps;
 	wip.memoizedState = current.memoizedState;
-
+	wip.ref = current.ref;
 	return wip;
 };
 
 export function createFiberFromElement(element: ReactElementType): FiberNode {
-	const { type, key, props } = element;
+	const { type, key, props, ref } = element;
 	let fiberTag: WorkTag = FunctionComponent;
 	if (typeof type === 'string') {
 		//<div/> type:'div'
@@ -127,6 +127,7 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
 	}
 	const fiber = new FiberNode(fiberTag, props, key);
 	fiber.type = type;
+	fiber.ref = ref;
 	return fiber;
 }
 

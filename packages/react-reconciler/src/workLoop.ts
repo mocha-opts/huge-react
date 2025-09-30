@@ -4,6 +4,7 @@ import {
 	commitHookEffectListCreate,
 	commitHookEffectListDestroy,
 	commitHookEffectListUnmount,
+	commitLayoutEffects,
 	commitMutationEffects
 } from './commitWork';
 import { completeWork } from './completeWork';
@@ -283,16 +284,19 @@ function commitRoot(root: FiberRootNode) {
 	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 
 	if (subtreeHasEffect || rootHasEffect) {
-		//执行子阶段
-		//beforeMutation
+		//有副作用要执行
 
-		//mutation Placement
+		//阶段1/3:beforeMutation
+
+		//阶段2/3:Mutation
 		commitMutationEffects(finishedWork, root);
-
+		//Fiber Tree切换
 		root.current = finishedWork;
-		//layout
+		//阶段3/3 Layout  (这个阶段的时候，之前的wip fiber 已经变成 current fiber )
+		commitLayoutEffects(finishedWork, root);
 	} else {
 		//不存在对应的操作
+		//Fiber Tree切换
 		root.current = finishedWork;
 	}
 	rootDoesHavePassiveEffects = false;

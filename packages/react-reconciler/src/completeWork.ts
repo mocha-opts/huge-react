@@ -13,7 +13,7 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags, Update } from './fiberFlags';
+import { NoFlags, Ref, Update } from './fiberFlags';
 
 //递归中的递
 export const completeWork = (wip: FiberNode) => {
@@ -34,14 +34,22 @@ export const completeWork = (wip: FiberNode) => {
 				//TODO 判断变化
 				// updateFiberProps(wip.stateNode, newProps);
 				markUpdate(wip);
+				//标记Ref
+				if (current.ref !== wip.ref) {
+					markRef(wip);
+				}
 			} else {
 				//mount
-				//1. 构建DOM
+				//1.初始化DOM
 				//				const instance = createInstance(wip.type, newProps);
 				const instance = createInstance(wip.type, newProps);
-				//2. 将DOM插入到DOM树中
+				//2.挂载DOM 将DOM插入到DOM树中
 				appendAllChildren(instance, wip);
 				wip.stateNode = instance;
+				//3.标记Ref
+				if (wip.ref !== null) {
+					markRef(wip);
+				}
 			}
 			bubbleProperties(wip);
 			return null;
@@ -78,6 +86,8 @@ export const completeWork = (wip: FiberNode) => {
 };
 
 function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
+	// 遍历workInProgress所有子孙 DOM元素，依次挂载
+
 	let node = wip.child;
 
 	while (node !== null) {
@@ -117,4 +127,8 @@ function bubbleProperties(wip: FiberNode) {
 }
 function markUpdate(fiber: FiberNode) {
 	fiber.flags |= Update;
+}
+
+function markRef(fiber: FiberNode) {
+	fiber.flags |= Ref;
 }
