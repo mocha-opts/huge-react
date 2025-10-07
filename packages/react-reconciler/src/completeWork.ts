@@ -12,9 +12,11 @@ import {
 	FunctionComponent,
 	HostComponent,
 	HostRoot,
-	HostText
+	HostText,
+	OffscreenComponent,
+	SuspenseComponent
 } from './workTags';
-import { NoFlags, Ref, Update } from './fiberFlags';
+import { NoFlags, Ref, Update, Visibility } from './fiberFlags';
 import { popProvider } from './fiberContext';
 
 //递归中的递
@@ -76,12 +78,33 @@ export const completeWork = (wip: FiberNode) => {
 		case HostRoot:
 		case FunctionComponent:
 		case Fragment:
+		case OffscreenComponent:
 			bubbleProperties(wip);
 			return null;
 		case ContextProvider:
 			const context = wip.type._context;
 			popProvider(context);
 			bubbleProperties(wip);
+			return null;
+		case SuspenseComponent:
+			const offscreenFiber = wip.child as FiberNode;
+			const isHidden = offscreenFiber.pendingProps.mode === 'hidden';
+			const currentOffscreenFiber = offscreenFiber.alternate;
+			if (currentOffscreenFiber !== null) {
+				//update
+				const wasHidden = currentOffscreenFiber.pendingProps.mode === 'hidden';
+
+				if (isHidden !== wasHidden) {
+					offscreenFiber.flags |= Visibility;
+					bubbleProperties(offscreenFiber);
+				}
+			} else if (isHidden) {
+				//mount 时	且 为隐藏状态的话
+				offscreenFiber.flags |= Visibility;
+				bubbleProperties(offscreenFiber);
+			}
+			bubbleProperties(wip);
+
 			return null;
 		default:
 			if (__DEV__) {

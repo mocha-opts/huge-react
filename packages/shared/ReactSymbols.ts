@@ -16,3 +16,17 @@ export const REACT_CONTEXT_TYPE = supportSymbol
 export const REACT_PROVIDER_TYPE = supportSymbol
 	? Symbol.for('react.provider')
 	: 0xeac2;
+
+export const REACT_SUSPENSE_TYPE = supportSymbol
+	? Symbol.for('react.suspense')
+	: 0xeac3;
+
+export const REACT_OFFSCREEN_TYPE = supportSymbol
+	? Symbol.for('react.offscreen')
+	: 0xeac4;
+
+export const REACT_LEGACY_HIDDEN_TYPE = supportSymbol
+	? Symbol.for('react.legacy_hidden')
+	: 0xeac5;
+
+export const REACT_SCOPE_TYPE = supportSymbol;
