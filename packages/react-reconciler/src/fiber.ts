@@ -1,4 +1,4 @@
-import { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
+import { Key, Props, ReactElementType, Ref, Wakeable } from 'shared/ReactTypes';
 import {
 	ContextProvider,
 	Fragment,
@@ -78,11 +78,15 @@ export class FiberRootNode {
 	current: FiberNode;
 	finishedWork: FiberNode | null;
 	pendingLanes: Lanes;
+	suspendedLanes: Lanes;
+	pingedLanes: Lanes;
 	finishLane: Lane;
 	pendingPassiveEffects: PendingPassiveEffects;
 
 	callbackNode: CallbackNode | null;
 	callbackPriority: Lane;
+	// WeakMap{promise:Set<Lane>}
+	pingCache: WeakMap<Wakeable<any>, Set<Lane>> | null;
 
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
@@ -90,12 +94,16 @@ export class FiberRootNode {
 		hostRootFiber.stateNode = this;
 		this.finishedWork = null;
 		this.pendingLanes = NoLanes;
+		this.suspendedLanes = NoLanes;
+		this.pingedLanes = NoLanes;
+
 		this.finishLane = NoLane;
 
 		this.callbackNode = null;
 		this.callbackPriority = NoLane;
 
 		this.pendingPassiveEffects = { unmount: [], update: [] }; // unmount时执行的destort回调和update时执行的create回调
+		this.pingCache = null;
 	}
 }
 
@@ -139,10 +147,7 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
 		type.$$typeof === REACT_PROVIDER_TYPE
 	) {
 		fiberTag = ContextProvider;
-	} else if (
-		typeof type === 'object' &&
-		type.$$typeof === REACT_SUSPENSE_TYPE
-	) {
+	} else if (type === REACT_SUSPENSE_TYPE) {
 		fiberTag = SuspenseComponent;
 	} else if (typeof type !== 'function' && __DEV__) {
 		console.warn('未定义的type类型', element);
@@ -164,5 +169,11 @@ export function createFiberFromOffscreen(
 ): FiberNode {
 	const fiber = new FiberNode(OffscreenComponent, pendingProps, null);
 	fiber.type = REACT_OFFSCREEN_TYPE;
+	//todo stateNode
 	return fiber;
+}
+
+export interface OffscreenProps {
+	mode: 'visible' | 'hidden';
+	children: any;
 }

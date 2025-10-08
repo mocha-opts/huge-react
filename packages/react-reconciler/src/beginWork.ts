@@ -13,13 +13,22 @@ import {
 	FunctionComponent,
 	HostComponent,
 	HostRoot,
-	HostText
+	HostText,
+	OffscreenComponent,
+	SuspenseComponent
 } from './workTags';
 import { mountChildFibers, reconcileChildFibers } from './childFibers';
 import { renderWithHooks } from './fiberHooks';
 import { Lane } from './fiberLanes';
-import { ChildDeletion, Placement, Ref } from './fiberFlags';
+import {
+	ChildDeletion,
+	DidCapture,
+	NoFlags,
+	Placement,
+	Ref
+} from './fiberFlags';
 import { pushProvider } from './fiberContext';
+import { pushSuspenseHandler } from './suspenseContext';
 
 //递归中的递
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
@@ -37,6 +46,10 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 			return updateFragment(wip);
 		case ContextProvider:
 			return updateContextProvider(wip);
+		case SuspenseComponent:
+			return updateSuspenseComponent(wip);
+		case OffscreenComponent:
+			return updateOffscreenComponent(wip);
 		default:
 			if (__DEV__) {
 				console.warn('beginWork未实现的类型');
@@ -49,14 +62,18 @@ function updateSuspenseComponent(wip: FiberNode) {
 	const current = wip.alternate;
 	const nextProps = wip.pendingProps;
 	const fallback = nextProps.fallback;
+
 	let showFallback = false;
-	const didSuspend = true;
+	const didSuspend = (wip.flags & DidCapture) !== NoFlags;
+
 	if (didSuspend) {
 		showFallback = true;
+		wip.flags &= ~DidCapture;
 	}
 
 	const nextPrimaryChildren = nextProps.children;
 	const nextFallbackChildren = nextProps.fallback;
+	pushSuspenseHandler(wip);
 
 	if (current === null) {
 		//mount
@@ -91,10 +108,12 @@ function updateSuspensePrimaryChildren(wip: FiberNode, primaryChildren: any) {
 	const currentPrimaryChildFragment = current.child as FiberNode;
 	const currentFallbackChildFragment: FiberNode | null =
 		currentPrimaryChildFragment.sibling;
+
 	const primaryChildProps: OffscreenProps = {
 		mode: 'visible',
 		children: primaryChildren
 	};
+
 	const primaryChildFragment = createWorkInProgress(
 		currentPrimaryChildFragment,
 		primaryChildProps
@@ -102,6 +121,7 @@ function updateSuspensePrimaryChildren(wip: FiberNode, primaryChildren: any) {
 	primaryChildFragment.return = wip;
 	primaryChildFragment.sibling = null;
 	wip.child = primaryChildFragment;
+
 	if (currentFallbackChildFragment !== null) {
 		const deletions = wip.deletions;
 		if (deletions === null) {
@@ -174,6 +194,8 @@ function mountSuspenseFallbackChildren(
 
 	const fallbackChildFragment = createFiberFromFragment(fallbackChildren, null);
 
+	// 父组件Suspense已经mount，所以需要fallback标记Placement
+
 	fallbackChildFragment.flags |= Placement;
 
 	primaryChildFragment.return = wip;
@@ -226,6 +248,12 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	updateQueue.shared.pending = null;
 	const { memoizedState } = processUpdateQueue(baseState, pending, renderLane);
 	wip.memoizedState = memoizedState;
+
+	const current = wip.alternate;
+	// 考虑RootDidNotComplete的情况，需要复用memoizedState
+	if (current !== null) {
+		current.memoizedState = memoizedState;
+	}
 
 	const nextChildren = wip.memoizedState;
 	reconcileChildren(wip, nextChildren);

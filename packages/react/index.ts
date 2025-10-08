@@ -4,6 +4,7 @@ import currentDispatcher, {
 } from './src/currentDispatcher';
 import ReactCurrentBatchConfig from './src/currentBatchConfig';
 import { jsxDEV, jsx, isValidElement as isValidElementFn } from './src/jsx';
+import { Usable } from 'shared/ReactTypes';
 export { createContext } from './src/context';
 export {
 	REACT_FRAGMENT_TYPE as Fragment,
@@ -34,6 +35,10 @@ export const useRef: Dispatcher['useRef'] = (initialValue) => {
 export const useContext: Dispatcher['useContext'] = (context) => {
 	const dispatcher = resolveDispatcher();
 	return dispatcher.useContext(context);
+};
+export const use: Dispatcher['use'] = <T>(usable: Usable<T>) => {
+	const dispatcher = resolveDispatcher();
+	return dispatcher.use(usable);
 };
 
 //内部数据共享层

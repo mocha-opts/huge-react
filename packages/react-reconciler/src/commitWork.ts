@@ -151,11 +151,14 @@ function findHostSubtreeRoot(
 	while (true) {
 		if (node.tag === HostComponent) {
 			if (hostSubtreeRoot === null) {
+				// 还未发现 root，当前就是
 				hostSubtreeRoot = node;
 				callback(node);
 			}
 		} else if (node.tag === HostText) {
 			if (hostSubtreeRoot === null) {
+				// 还未发现 root，text可以是顶层节点
+
 				callback(node);
 			}
 		} else if (
@@ -163,15 +166,17 @@ function findHostSubtreeRoot(
 			node.pendingProps.mode === 'hidden' &&
 			node !== finishedWork
 		) {
-			//什么都不做
+			// 隐藏的OffscreenComponent跳过
 		} else if (node.child !== null) {
 			node.child.return = node;
 			node = node.child;
 			continue;
 		}
+
 		if (node === finishedWork) {
 			return;
 		}
+
 		while (node.sibling === null) {
 			if (node.return === null || node.return === finishedWork) {
 				return;
@@ -183,7 +188,8 @@ function findHostSubtreeRoot(
 			node = node.return;
 		}
 
-		//离开了子树 到兄弟节点
+		//离开了子树 到兄弟节点  		// 去兄弟节点寻找，此时当前子树的host root可以移除了
+
 		if (hostSubtreeRoot === node) {
 			hostSubtreeRoot = null;
 		}
