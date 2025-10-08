@@ -49,11 +49,12 @@ export function isSubsetOfLanes(set: Lanes, subset: Lane) {
 
 export function markRootFinished(root: FiberRootNode, lane: Lane) {
 	root.pendingLanes = removeLanes(root.pendingLanes, lane);
+
+	root.suspendedLanes = NoLanes;
+	root.pingedLanes = NoLanes;
 	// if (root.finishLane === NoLane || root.finishLane > lane) {
 	// 	root.finishLane = lane;
 	// }
-	root.suspendedLanes = NoLanes;
-	root.pingedLanes = NoLanes;
 }
 export function markRootUpdated(root: FiberRootNode, lane: Lane) {
 	root.pendingLanes = mergeLanes(root.pendingLanes, lane);
@@ -86,12 +87,14 @@ export function schedulerPriorityToLane(schedulerPriority: number): Lane {
 }
 
 export function markRootPinged(root: FiberRootNode, pingedLane: Lane) {
+	//所有pingedLanes 一定是suspendedLanes的子集，只有先被挂起了 才会被ping，取到相交的部分 保留
 	root.pingedLanes |= root.suspendedLanes & pingedLane;
 }
 
 export function markRootSuspended(root: FiberRootNode, suspendedLane: Lane) {
+	//完善suspense
 	root.suspendedLanes |= suspendedLane;
-	root.pingedLanes &= ~suspendedLane;
+	root.pingedLanes &= ~suspendedLane; //从pingedLanes移除
 }
 
 export function getNextLane(root: FiberRootNode): Lane {
@@ -103,10 +106,11 @@ export function getNextLane(root: FiberRootNode): Lane {
 	let nextLane = NoLane;
 
 	// 排除掉挂起的lane
-	const suspendedLanes = pendingLanes & ~root.suspendedLanes;
+	const suspendedLanes = pendingLanes & ~root.suspendedLanes; //pendingLanes中没有被挂起的Lane
 	if (suspendedLanes !== NoLanes) {
 		nextLane = getHighestPriorityLane(suspendedLanes);
 	} else {
+		//没有的话 看pendingLanes中有没有被ping的
 		const pingedLanes = pendingLanes & root.pingedLanes;
 		if (pingedLanes !== NoLanes) {
 			nextLane = getHighestPriorityLane(pingedLanes);

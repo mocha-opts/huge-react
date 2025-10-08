@@ -250,7 +250,9 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 	wip.memoizedState = memoizedState;
 
 	const current = wip.alternate;
+
 	// 考虑RootDidNotComplete的情况，需要复用memoizedState
+	//双缓存树没有翻转 所以没有数据会白屏，复用
 	if (current !== null) {
 		current.memoizedState = memoizedState;
 	}

@@ -6,10 +6,10 @@ import React from 'react';
 // 简单例子 + 没有Suspense catch的情况
 function App() {
 	return (
-		<Suspense fallback={<div>loading...</div>}>
-			<Cpn id={0} timeout={1000} />
-		</Suspense>
-		// <Cpn id={0} timeout={1000} />
+		// <Suspense fallback={<div>loading...</div>}>
+		// 	<Cpn id={0} timeout={1000} />
+		// </Suspense>
+		<Cpn id={0} timeout={3000} />
 	);
 }
 

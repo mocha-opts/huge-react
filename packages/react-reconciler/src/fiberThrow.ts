@@ -36,8 +36,8 @@ function attachPingListener(
 			if (pingCache !== null) {
 				pingCache.delete(wakeable);
 			}
-			markRootUpdated(root, lane);
 			markRootPinged(root, lane);
+			markRootUpdated(root, lane);
 			ensureRootIsScheduled(root);
 		}
 		wakeable.then(ping, ping);

@@ -78,8 +78,6 @@ export class FiberRootNode {
 	current: FiberNode;
 	finishedWork: FiberNode | null;
 	pendingLanes: Lanes;
-	suspendedLanes: Lanes;
-	pingedLanes: Lanes;
 	finishLane: Lane;
 	pendingPassiveEffects: PendingPassiveEffects;
 
@@ -88,6 +86,8 @@ export class FiberRootNode {
 	// WeakMap{promise:Set<Lane>}
 	pingCache: WeakMap<Wakeable<any>, Set<Lane>> | null;
 
+	suspendedLanes: Lanes; //代表当前root下所有被挂起的更新所对应的优先级
+	pingedLanes: Lanes; //代表当前root下所有被挂起的更新中被ping的更新所对应的优先级
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
