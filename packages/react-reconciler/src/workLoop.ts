@@ -256,7 +256,7 @@ function performSyncWorkOnRoot(root: FiberRootNode) {
 			break;
 	}
 }
-
+let c = 0;
 function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 	if (__DEV__) {
 		console.log(`开始${shouldTimeSlice ? '并发' : '同步'}更新`, root);
@@ -288,6 +288,11 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
 		} catch (e) {
 			if (__DEV__) {
 				console.warn('workloop发生错误');
+			}
+			c++;
+			if (c > 20) {
+				break;
+				console.warn('break!');
 			}
 			handleThrow(root, e);
 			// workInProgress = null;

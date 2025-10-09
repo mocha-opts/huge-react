@@ -19,7 +19,7 @@ export const REACT_PROVIDER_TYPE = supportSymbol
 
 export const REACT_SUSPENSE_TYPE = supportSymbol
 	? Symbol.for('react.suspense')
-	: 0xeac3;
+	: 0xeac1;
 
 export const REACT_OFFSCREEN_TYPE = supportSymbol
 	? Symbol.for('react.offscreen')
@@ -30,3 +30,7 @@ export const REACT_LEGACY_HIDDEN_TYPE = supportSymbol
 	: 0xeac5;
 
 export const REACT_SCOPE_TYPE = supportSymbol;
+
+export const REACT_MEMO_TYPE = supportSymbol
+	? Symbol.for('react.memo')
+	: 0xeac3;
