@@ -19,6 +19,7 @@ import {
 import { NoFlags, Ref, Update, Visibility } from './fiberFlags';
 import { popProvider } from './fiberContext';
 import { popSuspenseHandler } from './suspenseContext';
+import { mergeLanes, NoLanes } from './fiberLanes';
 
 //递归中的递
 export const completeWork = (wip: FiberNode) => {
@@ -143,19 +144,26 @@ function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
 		node = node.sibling;
 	}
 }
-
+//completework往上冒泡的过程
 function bubbleProperties(wip: FiberNode) {
 	let subtreeFlags = NoFlags;
 	let child = wip.child;
-
+	let newChildLanes = NoLanes;
 	while (child !== null) {
 		subtreeFlags |= child.subtreeFlags;
 		subtreeFlags |= child.flags;
+
+		//child.lanes child.childLanes
+		newChildLanes = mergeLanes(
+			newChildLanes,
+			mergeLanes(child.lanes, child.childLanes)
+		);
 
 		child.return = wip;
 		child = child.sibling;
 	}
 	wip.subtreeFlags |= subtreeFlags;
+	wip.childLanes = newChildLanes;
 }
 function markUpdate(fiber: FiberNode) {
 	fiber.flags |= Update;

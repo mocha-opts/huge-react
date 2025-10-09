@@ -80,7 +80,7 @@ export function markRootUpdated(root: FiberRootNode, lane: Lane) {
 }
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	//从当前出发更新的fiber，一直遍历到fiberRootNode
-	const root = markUpdateFromFiberToRoot(fiber);
+	const root = markUpdateLaneFromFiberToRoot(fiber, lane);
 	markRootUpdated(root, lane);
 	//接着执行renderRoot
 	ensureRootIsScheduled(root);
@@ -142,10 +142,21 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 	root.callbackNode = newCallbackNode;
 	root.callbackPriority = curPriority;
 }
-function markUpdateFromFiberToRoot(fiber: FiberNode) {
+
+//root.pendingLanes 指的是整棵组件树下的所有fiber中存在的update 它对应的lane的合集
+//FiberNode.lanes 指的是某一个fiber的update 对应的lane合集。
+//也就是说子树中的所有fiber的lanes 合集等于root.pendingLanes
+//当前fiber触发了更新，从这个fiber往上一直冒泡到根节点的时候，每一级的 childlanes 就附加上当前的lane
+function markUpdateLaneFromFiberToRoot(fiber: FiberNode, lane: Lane) {
 	let node = fiber;
 	let parent = node.return;
 	while (parent !== null) {
+		parent.childLanes = mergeLanes(parent.childLanes, lane);
+		const alternate = parent.alternate;
+		if (alternate !== null) {
+			alternate.childLanes = mergeLanes(alternate.childLanes, lane);
+		}
+
 		node = parent;
 		parent = node.return;
 	}
@@ -171,6 +182,7 @@ function performConcurrentWorkOnRoot(
 			return null;
 		}
 	}
+
 	const lane = getNextLane(root);
 	const curCallbackNode = root.callbackNode;
 	//防御性编程
@@ -189,7 +201,6 @@ function performConcurrentWorkOnRoot(
 			}
 			//中断前后的回调一致 就继续走这个逻辑 继续调度
 			return performConcurrentWorkOnRoot.bind(null, root);
-			break;
 		case RootCompleted:
 			const finishedWork = root.current.alternate;
 			root.finishedWork = finishedWork;

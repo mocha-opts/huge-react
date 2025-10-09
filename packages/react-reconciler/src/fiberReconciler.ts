@@ -38,7 +38,9 @@ export function updateContainer(
 		//创建完update后，要插入到hostrootFiber的updateQueue中
 		enqueueUpdate(
 			hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,
-			update
+			update,
+			hostRootFiber,
+			lane
 		);
 		scheduleUpdateOnFiber(hostRootFiber, lane);
 	});

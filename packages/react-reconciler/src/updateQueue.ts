@@ -1,6 +1,7 @@
 import { Dispatch } from 'react/src/currentDispatcher';
 import { Action } from 'shared/ReactTypes';
-import { isSubsetOfLanes, Lane, NoLane } from './fiberLanes';
+import { isSubsetOfLanes, Lane, mergeLanes, NoLane } from './fiberLanes';
+import { FiberNode } from './fiber';
 
 //UpdateQueue -> shared.pending -> update
 export interface Update<State> {
@@ -31,7 +32,9 @@ export const createUpdateQueue = <Action>() => {
 
 export const enqueueUpdate = <Action>(
 	updateQueue: UpdateQueue<Action>,
-	update: Update<Action>
+	update: Update<Action>,
+	fiber: FiberNode,
+	lane: Lane
 ) => {
 	const pending = updateQueue.shared.pending;
 	if (pending === null) {
@@ -47,12 +50,20 @@ export const enqueueUpdate = <Action>(
 	}
 	//pending 永远指向最后一个update pending = b -> a -> b
 	updateQueue.shared.pending = update;
+	//消费的时候消费的是wip的lanes，像消费update一样，消费的是wip上的update
+	fiber.lanes = mergeLanes(fiber.lanes, lane);
+	//遇到问题需要重置，就需要靠current
+	const alternate = fiber.alternate;
+	if (alternate !== null) {
+		alternate.lanes = mergeLanes(alternate.lanes, lane);
+	}
 };
 
 export const processUpdateQueue = <State>(
 	baseState: State,
 	pendingUpdate: Update<State> | null, //pending queue是已经合并过后的结果
-	renderLane: Lane
+	renderLane: Lane,
+	onSkipUpdate?: <State>(update: Update<State>) => void
 ): {
 	memoizedState: State;
 	baseState: State; //为最后一个没被跳过的update计算后的结果 ，newState 和newBaseState可能是不一致的
@@ -63,6 +74,7 @@ export const processUpdateQueue = <State>(
 		baseState,
 		baseQueue: null //初始为null
 	};
+
 	if (pendingUpdate !== null) {
 		const first = pendingUpdate.next; //第一个update
 		let pending = pendingUpdate.next as Update<any>; //b
@@ -78,6 +90,9 @@ export const processUpdateQueue = <State>(
 				//优先级不够 被跳过
 				//被跳过的update
 				const clone = createUpdate(pending.action, pending.lane);
+
+				onSkipUpdate?.(clone); //跳过的话 就不需要消费lane
+
 				//是不是第一个被跳过的
 				if (newBaseQueueFirst === null) {
 					//first = u0 last = u0

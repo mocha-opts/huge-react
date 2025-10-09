@@ -36,8 +36,8 @@ export function requestUpdateLane() {
 	const lane = schedulerPriorityToLane(currentSchedulerPriority);
 	return lane;
 }
-export function removeLanes(lanes: Lanes, subset: Lanes): Lanes {
-	return lanes & ~subset;
+export function removeLanes(set: Lanes, subset: Lane | Lanes): Lanes {
+	return set & ~subset;
 }
 export function getHighestPriorityLane(lanes: Lanes): Lane {
 	return lanes & -lanes;
@@ -117,4 +117,8 @@ export function getNextLane(root: FiberRootNode): Lane {
 		}
 	}
 	return nextLane;
+}
+
+export function includeSomeLanes(set: Lanes, subset: Lane | Lanes) {
+	return (set & subset) !== NoLanes;
 }

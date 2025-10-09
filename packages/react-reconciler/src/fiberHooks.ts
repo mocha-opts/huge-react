@@ -12,11 +12,18 @@ import {
 } from './updateQueue';
 import { Action, ReactContext, Thenable, Usable } from 'shared/ReactTypes';
 import { scheduleUpdateOnFiber } from './workLoop';
-import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
+import {
+	Lane,
+	mergeLanes,
+	NoLane,
+	removeLanes,
+	requestUpdateLane
+} from './fiberLanes';
 import { Flags, PassiveEffect } from './fiberFlags';
 import { HookHasEffect, Passive } from './hookEffectTags';
 import { REACT_CONTEXT_TYPE } from 'shared/ReactSymbols';
 import { trackUsedThenable } from './thenable';
+import { markWipReceiveUpdate } from './beginWork';
 
 let currentlyRenderingFiber: FiberNode | null = null;
 let workInProgressHook: Hook | null = null;
@@ -300,11 +307,30 @@ function updateState<State>(): [State, Dispatch<State>] {
 		queue.shared.pending = null;
 	}
 	if (baseQueue !== null) {
+		const prevState = hook.memoizedState; //更新前状态
 		const {
 			memoizedState,
 			baseQueue: newBaseQueue,
 			baseState: newBaseState
-		} = processUpdateQueue(hook.memoizedState, baseQueue, renderLane);
+		} = processUpdateQueue(
+			hook.memoizedState,
+			baseQueue,
+			renderLane,
+			(update) => {
+				const skippedLane = update.lane;
+				const fiber = currentlyRenderingFiber as FiberNode;
+				//Nolanes
+				fiber.lanes = mergeLanes(fiber.lanes, skippedLane);
+			}
+		);
+		//NaN === NaN //false
+		//Object.is true
+
+		//+0 === -0 //true;
+		//Object.is false
+		if (!Object.is(prevState, memoizedState)) {
+			markWipReceiveUpdate();
+		}
 		hook.memoizedState = memoizedState;
 		hook.baseState = newBaseState;
 		hook.baseQueue = newBaseQueue;
@@ -320,7 +346,7 @@ function dispatchSetState<State>(
 	const lane = requestUpdateLane();
 	//和hostroot更新流程类似
 	const update = createUpdate(action, lane);
-	enqueueUpdate(updateQueue, update);
+	enqueueUpdate(updateQueue, update, fiber, lane);
 	scheduleUpdateOnFiber(fiber, lane); //对于触发更新的FC 对应的fiber进行schedule
 }
 
@@ -443,4 +469,12 @@ export function resetHooksOnUnwind() {
 	currentlyRenderingFiber = null;
 	currentHook = null;
 	workInProgressHook = null;
+}
+
+export function bailoutHook(wip: FiberNode, renderLane: Lane) {
+	const current = wip.alternate as FiberNode;
+	wip.updateQueue = current.updateQueue;
+	wip.flags &= ~PassiveEffect; //移除
+
+	current.lanes = removeLanes(current.lanes, renderLane);
 }
