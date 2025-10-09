@@ -35,7 +35,7 @@ import { pushProvider } from './fiberContext';
 import { pushSuspenseHandler } from './suspenseContext';
 
 //是否能命中bailout
-let didReceiveUpdate: boolean = false;
+let didReceiveUpdate = false;
 
 export function markWipReceiveUpdate() {
 	didReceiveUpdate = true;

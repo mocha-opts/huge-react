@@ -8,6 +8,8 @@ export interface Update<State> {
 	action: Action<State>;
 	next?: Update<any> | null; //指向下一个update 实现环状链表
 	lane: Lane;
+	hasEagerState: boolean;
+	eagerState: State | null;
 }
 //this.setState({x:1})
 //this.setState({xx:1},()=>{{xx:2}});
@@ -20,9 +22,11 @@ export interface UpdateQueue<State> {
 //代表更新的数据结构Update  Update实例化的方法
 export const createUpdate = <State>(
 	action: Action<State>,
-	lane: Lane
+	lane: Lane,
+	hasEagerState = false,
+	eagerState = null
 ): Update<State> => {
-	return { action, lane, next: null };
+	return { action, lane, next: null, hasEagerState, eagerState };
 };
 
 //UpdateQueue实例化的方法
@@ -58,6 +62,16 @@ export const enqueueUpdate = <Action>(
 		alternate.lanes = mergeLanes(alternate.lanes, lane);
 	}
 };
+
+export function basicStateReducer<State>(state: State, action: Action<State>) {
+	if (action instanceof Function) {
+		//baseState 1 update (x) => 4x -> memoizedState 4
+		return action(state);
+	} else {
+		//baseState 1 update 2 -> memoizedState 2
+		return action;
+	}
+}
 
 export const processUpdateQueue = <State>(
 	baseState: State,
@@ -115,12 +129,10 @@ export const processUpdateQueue = <State>(
 					newBaseQueueLast = clone;
 				}
 				const action = pendingUpdate.action;
-				if (action instanceof Function) {
-					//baseState 1 update (x) => 4x -> memoizedState 4
-					newState = action(baseState);
+				if (pending.hasEagerState) {
+					newState = pending.eagerState;
 				} else {
-					//baseState 1 update 2 -> memoizedState 2
-					newState = action;
+					newState = basicStateReducer(baseState, action);
 				}
 			}
 			pending = pending?.next as Update<any>;
