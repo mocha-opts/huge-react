@@ -26,12 +26,18 @@ import { HookHasEffect, Passive } from './hookEffectTags';
 import { REACT_CONTEXT_TYPE } from 'shared/ReactSymbols';
 import { trackUsedThenable } from './thenable';
 import { markWipReceiveUpdate } from './beginWork';
+import { readContext as readContextOrigin } from './fiberContext';
 
 let currentlyRenderingFiber: FiberNode | null = null;
 let workInProgressHook: Hook | null = null;
 let currentHook: Hook | null = null;
 let renderLane: Lane = NoLane;
 const { currentDispatcher } = internals;
+
+function readContext<Value>(context: ReactContext<Value>): Value {
+	const consumer = currentlyRenderingFiber as FiberNode;
+	return readContextOrigin(consumer, context);
+}
 
 //存在fiberNode的memoizedState 指向的是 一条保存了hooks的单向链表 (useSate->useEffect->useContext->useSate)
 //定义Hook 的数据结构
@@ -478,16 +484,6 @@ function updateWorkInProgressHook(): Hook {
 	}
 	//最终返回workInProgressHook
 	return workInProgressHook;
-}
-
-function readContext<T>(context: ReactContext<T>) {
-	const consumer = currentlyRenderingFiber; //当前render阶段的fiber
-	//代表了 useContext脱离了函数组件使用，比如说在window.调用useContext，此时就获取不到当前正在render的fiber
-	if (consumer === null) {
-		throw new Error('context需要有consumer，只能在函数组件中调用useContext');
-	}
-	const value = context._currentValue;
-	return value;
 }
 
 function use<T>(usable: Usable<T>): T {
