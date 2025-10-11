@@ -29,7 +29,9 @@ export const REACT_LEGACY_HIDDEN_TYPE = supportSymbol
 	? Symbol.for('react.legacy_hidden')
 	: 0xeac5;
 
-export const REACT_SCOPE_TYPE = supportSymbol;
+export const REACT_LAZY_TYPE = supportSymbol
+	? Symbol.for('react.lazy')
+	: 0xeac6;
 
 export const REACT_MEMO_TYPE = supportSymbol
 	? Symbol.for('react.memo')

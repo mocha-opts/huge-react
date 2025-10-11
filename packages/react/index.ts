@@ -12,6 +12,7 @@ export {
 	REACT_SUSPENSE_TYPE as Suspense
 } from 'shared/ReactSymbols';
 export { memo } from './src/memo';
+export { lazy } from './src/lazy';
 export const useState: Dispatcher['useState'] = (initialState) => {
 	const dispatcher = resolveDispatcher();
 	return dispatcher.useState(initialState);

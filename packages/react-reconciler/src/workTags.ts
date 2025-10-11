@@ -8,7 +8,7 @@ export type WorkTag =
 	| typeof SuspenseComponent
 	| typeof OffscreenComponent
 	| typeof MemoComponent
-	| typeof ScopeComponent;
+	| typeof LazyComponent;
 
 export const FunctionComponent = 0;
 export const HostRoot = 3; //ReactDom.render('')
@@ -20,4 +20,5 @@ export const ContextProvider = 8;
 export const SuspenseComponent = 13;
 export const OffscreenComponent = 14;
 export const MemoComponent = 15;
-export const ScopeComponent = 16;
+
+export const LazyComponent = 16;

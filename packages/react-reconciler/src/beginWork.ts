@@ -15,6 +15,7 @@ import {
 	HostRoot,
 	HostText,
 	MemoComponent,
+	LazyComponent,
 	OffscreenComponent,
 	SuspenseComponent
 } from './workTags';
@@ -112,6 +113,8 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 			return updateOffscreenComponent(wip);
 		case MemoComponent:
 			return updateMemoComponent(wip, renderLane);
+		case LazyComponent:
+			return updateLazyComponent(wip, renderLane);
 		default:
 			if (__DEV__) {
 				console.warn('beginWork未实现的类型');
@@ -120,6 +123,20 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	}
 	return null;
 };
+
+//const Cpn = lazy(() => import('./Cpn').then((res) => delay(res)));
+
+function updateLazyComponent(wip: FiberNode, renderLane: Lane) {
+	const LazyType = wip.type;
+	const payload = LazyType._payload;
+	const init = LazyType._init;
+	const Component = init(payload);
+	wip.type = Component;
+	wip.tag = FunctionComponent;
+	const child = updateFunctionComponent(wip, wip.type, renderLane);
+	return child;
+}
+
 function updateMemoComponent(wip: FiberNode, renderLane: Lane) {
 	//bailout四要素
 	const current = wip.alternate;

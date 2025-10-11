@@ -4,6 +4,7 @@ import {
 	Fragment,
 	FunctionComponent,
 	HostComponent,
+	LazyComponent,
 	MemoComponent,
 	OffscreenComponent,
 	SuspenseComponent,
@@ -13,6 +14,7 @@ import { Flags, NoFlags } from './fiberFlags';
 import { Container } from 'hostConfig'; //宿主环境是单独包
 import {
 	REACT_FRAGMENT_TYPE,
+	REACT_LAZY_TYPE,
 	REACT_MEMO_TYPE,
 	REACT_OFFSCREEN_TYPE,
 	REACT_PROVIDER_TYPE,
@@ -180,6 +182,9 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
 				break;
 			case REACT_MEMO_TYPE:
 				fiberTag = MemoComponent;
+				break;
+			case REACT_LAZY_TYPE:
+				fiberTag = LazyComponent;
 				break;
 			default:
 				console.warn('未定义的type类型', element);

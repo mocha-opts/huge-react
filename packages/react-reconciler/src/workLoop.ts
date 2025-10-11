@@ -57,9 +57,16 @@ const RootDidNotComplete = 3;
 
 let wipRootExitStatus: number = RootInProgress;
 
-type SuspendedReason = typeof NotSuspended | typeof SuspendedOnData;
+type SuspendedReason =
+	| typeof NotSuspended
+	| typeof SuspendedOnError
+	| typeof SuspendedOnData
+	| typeof SuspendedOnDeprecatedThrowPromise;
 const NotSuspended = 0;
-const SuspendedOnData = 1;
+const SuspendedOnError = 1;
+const SuspendedOnData = 2;
+const SuspendedOnDeprecatedThrowPromise = 4;
+
 let wipSuspendedReason: SuspendedReason = NotSuspended;
 let wipThrownValue: any = null;
 
@@ -354,6 +361,16 @@ function handleThrow(root: FiberRootNode, thrownValue: any) {
 	if (thrownValue === SuspenseException) {
 		thrownValue = getSuspenseThenable();
 		wipSuspendedReason = SuspendedOnData;
+	} else {
+		const isWakeable =
+			thrownValue !== null &&
+			typeof thrownValue === 'object' &&
+			typeof thrownValue.then === 'function';
+
+		wipThrownValue = thrownValue;
+		wipSuspendedReason = isWakeable
+			? SuspendedOnDeprecatedThrowPromise
+			: SuspendedOnError;
 	}
 	wipThrownValue = thrownValue;
 }
